@@ -17,7 +17,7 @@ import time
 import math
 
 domain = 'https://www.ratebeer.com'
-abs_path = 'E:/RateBeerDocuments/Newversion/'
+abs_path = 'C:/Users/zh4448/Documents/RateBeerDocuments/Newversion/'
 
 gt_states = []
 
@@ -37,7 +37,7 @@ for link in states:
     gt_states.append(state_link.copy())
 
 '''Get breweries by state'''
-for state in gt_states[:1]:
+for state in gt_states:
     gt_brewery = []
     abbr = list(constant.states.keys())[list(constant.states.values()).index(state['State'])]
     next_url = domain+state['Link']
