@@ -26,10 +26,13 @@ db = client.rateBeer
 def remove_sub(str1, str2):
     s = ''
     indx = 0
+    space_loc = 0
     for x in str1:
         s+=x; indx+=1
+        if x == ' ': space_loc = indx
         if str2[0:indx]!=s: indx-=1; break
-    return str1[indx:].strip()
+    if x != ' ': indx = space_loc
+    return str1[indx:].strip() if str1[indx:].strip() else str1
         
 
 def update_mongodb(collection_name, data, myquery):
@@ -38,7 +41,7 @@ def update_mongodb(collection_name, data, myquery):
     collection.insert(data)
 
 domain = 'https://www.ratebeer.com'
-beer_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=GetBrewerBeers&variables=%7B%22first%22%3A100%2C%22orderBy%22%3A%22NAME%22%2C%22brewerId%22%3A%22{}%22%2C%22query%22%3A%22%22%2C%22orderDirection%22%3A%22ASC%22%2C%22minRatings%22%3A0%2C%22hideRetired%22%3Afalse%2C%22hideAliased%22%3Afalse%2C%22hideVerified%22%3Afalse%2C%22hideUnverified%22%3Afalse%2C%22hideUserRatedBeers%22%3Afalse%2C%22hideUserHasNotRated%22%3Afalse%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22197da784177aba6c136ee0a8703d441cc39a780ecdece1b1110b50f927d2f0c2%22%7D%7D'
+beer_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=GetBrewerBeers&variables=%7B%22first%22%3A100%2C%22orderBy%22%3A%22NAME%22%2C%22brewerId%22%3A%22{}%22%2C%22query%22%3A%22%22%2C%22orderDirection%22%3A%22ASC%22%2C%22minRatings%22%3A0%2C%22hideRetired%22%3Afalse%2C%22hideAliased%22%3Afalse%2C%22hideVerified%22%3Afalse%2C%22hideUnverified%22%3Afalse%2C%22hideUserRatedBeers%22%3Afalse%2C%22hideUserHasNotRated%22%3Afalse{}%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22197da784177aba6c136ee0a8703d441cc39a780ecdece1b1110b50f927d2f0c2%22%7D%7D'
 brewery_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=GetBrewerPageInfo&variables=%7B%22brewerId%22%3A%22{}%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22fa70ad9f04baac4471768040a3616a300be7d67ae2b64cfaf060a3ef9930b97e%22%7D%7D'
 abs_path = 'C:/Users/zh4448/Documents/RateBeerDocuments/Newversion/'
 
@@ -64,8 +67,6 @@ for abbr in constant.abbr[1:]:
         try:
             brewery_id = brewery['Link'].split('/')[-2]
 #            brewery_id = '12890'
-            next_url = beer_query.format(brewery_id)
-            beer_content = json.loads(get_general_html(next_url))
             next_url = brewery_query.format(brewery_id)
             brewery_content = json.loads(get_general_html(next_url))
         except:
@@ -94,30 +95,39 @@ for abbr in constant.abbr[1:]:
         brewery_condition = { "brewery.id": { "$in": gt_brewery_id } }
         update_mongodb('breweries', {'brewery':brewery_data}, brewery_condition)
         '''Beer list'''
-        beers_table = beer_content['data']['brewerBeers']['items']
-        for beer_item in beers_table:
-            beer_dic = OrderedDict()
-            beer_item = beer_item['beer']
-            beer_dic.update({key:brewery_dic[key] for key in ['State','Company','Est.','Closed','Status']})
-#            beer_dic['BeerName'] = remove_sub(beer_item['name'], beer_dic['Company'])
-            beer_dic['BeerName'] = beer_item['name']
-            beer_dic['BeerId'] = beer_item['id']
-            beer_dic['BeerCreated'] = beer_item['createdAt'][:10]
-            beer_dic['ABV'] = beer_item['abv']
-            beer_dic['Style'] = beer_item['style']['name']
-            beer_dic['Ratings'] = beer_item['ratingsCount']
-            beer_dic['Avg'] = beer_item['averageQuickRating']
-            beer_dic['Archived'] = beer_item['isRetired']
-            gt_beers.append(beer_dic.copy())
-            gt_beer_id.append(beer_item['id'])
-        
+        hasBeer = True
+        next_url = beer_query.format(brewery_id,'')
+        beer_content = json.loads(get_general_html(next_url))
+        beer_list = []
+        while hasBeer:
+            beers_table = beer_content['data']['brewerBeers']['items']
+            beer_list.extend(beers_table.copy())
+            for beer_item in beers_table:
+                beer_dic = OrderedDict()
+                beer_item = beer_item['beer']
+                beer_dic.update({key:brewery_dic[key] for key in ['State','Company','Est.','Closed','Status']})
+                beer_dic['BeerName'] = remove_sub(beer_item['name'], beer_dic['Company'])
+    #            beer_dic['BeerName'] = beer_item['name']
+                beer_dic['BeerId'] = beer_item['id']
+                beer_dic['BeerCreated'] = beer_item['createdAt'][:10]
+                beer_dic['ABV'] = beer_item['abv']
+                beer_dic['Style'] = beer_item['style']['name']
+                beer_dic['Ratings'] = beer_item['ratingsCount']
+                beer_dic['Avg'] = beer_item['averageQuickRating']
+                beer_dic['Archived'] = beer_item['isRetired']
+                gt_beers.append(beer_dic.copy())
+                gt_beer_id.append(beer_item['id'])
+            if beer_content['data']['brewerBeers']['last']:
+                next_url = beer_query.format(brewery_id,'%2C%22after%22%3A%22{}%22'.format(beer_content['data']['brewerBeers']['last']))
+                beer_content = json.loads(get_general_html(next_url))
+            else: hasBeer = False
+            
         beer_condition = {"beer.id": {"$in": gt_beer_id}}
-        update_mongodb('beers', beers_table, beer_condition)
-        
+        update_mongodb('beers', beer_list, beer_condition)
     path = abs_path + 'breweries_info'
     filename = 'rateBeer_breweries_info_'+abbr+'.csv'
     exportCSV(gt_brewers,filename,path)
-
+   
     path = abs_path + 'beers'
     filename = 'rateBeer_beers_'+abbr+'.csv'
     exportCSV(gt_beers,filename,path)
