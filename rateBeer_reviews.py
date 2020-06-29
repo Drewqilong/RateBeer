@@ -51,6 +51,7 @@ for abbr in constant.abbr[:1]:
         gt_beer_id = []
         
         print('Brewery No:'+str(index+1)+' /Total No: '+str(len(lt_beer))+',State: '+abbr)
+        
 #        beer_dic = OrderedDict(beer)    
 #        brewery_dic['Closed'] = brewery_dic['Closed'].apply(lambda x: x if pd.isnull(x) else str(int(x)))
         
@@ -65,33 +66,39 @@ for abbr in constant.abbr[:1]:
             continue
         '''Beer statistics'''
         beer_stat = beer_content['data']['beer']
-        if beer_stat:
-            beer_dic = OrderedDict({key:beer[key] for key in ['State','Company','BeerOriginalName','BeerName','BeerId','Style','ABV','Archived']})
-            beer_dic['styleScore'] = beer_stat['styleScore']
-            beer_dic['overallScore'] = beer_stat['overallScore']
-            beer_dic['averageQuickRating'] = beer_stat['averageQuickRating']
-            beer_dic['normalizedAverageReview'] = beer_stat['normalizedAverageReview']
-            beer_dic['averageReview'] = beer_stat['averageReview']
-            beer_dic['createdAt'] = beer_stat['createdAt'][:10]
-            beer_dic['updatedAt'] = (beer_stat['updatedAt'][:10] if beer_stat['updatedAt'] else None)
-            beer_dic['ibu'] = beer_stat['ibu']
-            beer_dic['calories'] = beer_stat['calories']
-            beer_dic['ratingsCount'] = beer_stat['ratingsCount']
-            beer_dic['reviewsCount'] = beer_stat['reviewsCount']
-            beer_dic['seasonal'] = beer_stat['seasonal']
-            gt_beers.append(beer_dic.copy())
-        
+        if not beer_stat: continue
+        if beer_stat['brewer']['id'] != str(beer['BreweryId']): continue
+    
+        beer_dic = OrderedDict({key:beer[key] for key in ['State','Company','BreweryId', 'BeerOriginalName','BeerName','BeerId','Style','ABV','Archived']})
+        beer_dic['styleScore'] = beer_stat['styleScore']
+        beer_dic['overallScore'] = beer_stat['overallScore']
+        beer_dic['averageQuickRating'] = beer_stat['averageQuickRating']
+        beer_dic['normalizedAverageReview'] = beer_stat['normalizedAverageReview']
+        beer_dic['averageReview'] = beer_stat['averageReview']
+        beer_dic['createdAt'] = beer_stat['createdAt'][:10]
+        beer_dic['updatedAt'] = (beer_stat['updatedAt'][:10] if beer_stat['updatedAt'] else None)
+        beer_dic['ibu'] = beer_stat['ibu']
+        beer_dic['calories'] = beer_stat['calories']
+        beer_dic['ratingsCount'] = beer_stat['ratingsCount']
+        beer_dic['reviewsCount'] = beer_stat['reviewsCount']
+        beer_dic['seasonal'] = beer_stat['seasonal']
+        gt_beers.append(beer_dic.copy())
         '''Reviews'''
         hasReview = True
+#        try:
         next_url = review_query.format(beer_id,'')
         review_content = json.loads(get_general_html(next_url))
+#        except Exception as e:
+#            print(index)
+#            print(str(e))
+#            print(review_content)
         review_list = []
         while hasReview:
             
             review_table = review_content['data']['beerList']['items']
             review_list.extend(review_table.copy())
             for review_item in review_table:
-                review_dic = OrderedDict({key:beer[key] for key in ['State','Company','BeerOriginalName','BeerName','BeerId']})
+                review_dic = OrderedDict({key:beer[key] for key in ['State','Company','BreweryId', 'BeerOriginalName','BeerName','BeerId']})
                 review_dic['Base_score'] = review_item['score']
                 review_dic['SubScore'] = ''
                 for score_item in list(review_item['scores'].items())[:-1]:
