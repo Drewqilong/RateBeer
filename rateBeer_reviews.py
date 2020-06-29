@@ -20,9 +20,9 @@ import json
 
 from pymongo import MongoClient
 
-#client = MongoClient()
+client = MongoClient()
 
-client = MongoClient("mongodb+srv://dbuser:8fO56qa3wBdNYtsk@cluster0-bhgly.mongodb.net/rateBeer?retryWrites=true&w=majority")
+#client = MongoClient("mongodb+srv://dbuser:8fO56qa3wBdNYtsk@cluster0-bhgly.mongodb.net/rateBeer?retryWrites=true&w=majority")
 db = client.rateBeer
 #collection = db.breweries
         
@@ -35,10 +35,10 @@ def update_mongodb(collection_name, data, myquery):
 domain = 'https://www.ratebeer.com'
 beerStat_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=beer&variables=%7B%22beerId%22%3A%22{}%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%22a144a56d830595b80cf300e61424e46c22fd85d400ef948d6ea2e32f92b92708%22%7D%7D'
 review_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=BeerReviews&variables=%7B%22beerId%22%3A%22{}%22%2C%22order%22%3A%22RECENT%22%2C%22first%22%3A30%2C%22includePrivate%22%3Afalse{}%7D&extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%2C%22sha256Hash%22%3A%224803219468382b8398ded70fcbf045de7b4ffb5fc785d9e75901e6cd11c64e84%22%7D%7D'
-abs_path = 'C:/Users/zh4448/Documents/RateBeerDocuments/Newversion/'
+abs_path = 'E:/RateBeerDocuments/Newversion/'
 
 
-for abbr in constant.abbr[1:]:
+for abbr in constant.abbr[:1]:
     filename = abs_path + 'beers/rateBeer_beers_' + abbr + '.csv'
     
     gt_reviews = []
@@ -85,13 +85,13 @@ for abbr in constant.abbr[1:]:
         gt_beers.append(beer_dic.copy())
         '''Reviews'''
         hasReview = True
-#        try:
-        next_url = review_query.format(beer_id,'')
-        review_content = json.loads(get_general_html(next_url))
-#        except Exception as e:
-#            print(index)
-#            print(str(e))
-#            print(review_content)
+        try:
+            next_url = review_query.format(beer_id,'')
+            review_content = json.loads(get_general_html(next_url))
+        except Exception as e:
+            print(index)
+            print(str(e))
+            print(get_general_html(next_url))
         review_list = []
         while hasReview:
             
