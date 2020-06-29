@@ -46,7 +46,7 @@ brewery_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=GetBrew
 abs_path = 'C:/Users/zh4448/Documents/RateBeerDocuments/Newversion/'
 
 
-for abbr in constant.abbr[1:]:
+for abbr in constant.abbr:
     filename = abs_path + 'breweries/rateBeer_breweries_' + abbr + '.csv'
     
     gt_brewers = []
@@ -105,9 +105,9 @@ for abbr in constant.abbr[1:]:
             for beer_item in beers_table:
                 beer_dic = OrderedDict()
                 beer_item = beer_item['beer']
-                beer_dic.update({key:brewery_dic[key] for key in ['State','Company','Est.','Closed','Status']})
+                beer_dic.update({key:brewery_dic[key] for key in ['State','Company','BreweryId', 'Est.','Closed','Status']})
+                beer_dic['BeerOriginalName'] = beer_item['name']
                 beer_dic['BeerName'] = remove_sub(beer_item['name'], beer_dic['Company'])
-    #            beer_dic['BeerName'] = beer_item['name']
                 beer_dic['BeerId'] = beer_item['id']
                 beer_dic['BeerCreated'] = beer_item['createdAt'][:10]
                 beer_dic['ABV'] = beer_item['abv']
