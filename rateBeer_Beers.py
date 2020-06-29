@@ -46,7 +46,7 @@ brewery_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=GetBrew
 abs_path = 'C:/Users/zh4448/Documents/RateBeerDocuments/Newversion/'
 
 
-for abbr in constant.abbr:
+for abbr in constant.abbr[4:]:
     filename = abs_path + 'breweries/rateBeer_breweries_' + abbr + '.csv'
     
     gt_brewers = []
@@ -97,10 +97,15 @@ for abbr in constant.abbr:
         '''Beer list'''
         hasBeer = True
         next_url = beer_query.format(brewery_id,'')
-        beer_content = json.loads(get_general_html(next_url))
+        beer_content = get_general_html(next_url, returnJson = True)
         beer_list = []
         while hasBeer:
-            beers_table = beer_content['data']['brewerBeers']['items']
+            try:
+                beers_table = beer_content['data']['brewerBeers']['items']
+            except:
+                logging.info(beer_content)
+                break
+            
             beer_list.extend(beers_table.copy())
             for beer_item in beers_table:
                 beer_dic = OrderedDict()
@@ -118,8 +123,11 @@ for abbr in constant.abbr:
                 gt_beers.append(beer_dic.copy())
                 gt_beer_id.append(beer_item['id'])
             if beer_content['data']['brewerBeers']['last']:
-                next_url = beer_query.format(brewery_id,'%2C%22after%22%3A%22{}%22'.format(beer_content['data']['brewerBeers']['last']))
-                beer_content = json.loads(get_general_html(next_url))
+                try:
+                    next_url = beer_query.format(brewery_id,'%2C%22after%22%3A%22{}%22'.format(beer_content['data']['brewerBeers']['last']))
+                    beer_content = get_general_html(next_url, returnJson = True)
+                except:
+                    logging.info(beer_content)
             else: hasBeer = False
             
         beer_condition = {"beer.id": {"$in": gt_beer_id}}
