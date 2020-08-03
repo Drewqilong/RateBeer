@@ -20,9 +20,9 @@ import json
 
 from pymongo import MongoClient
 
-#client = MongoClient()
+client = MongoClient()
 
-client = MongoClient("mongodb+srv://dbuser:8fO56qa3wBdNYtsk@cluster0-bhgly.mongodb.net/rateBeer?retryWrites=true&w=majority")
+#client = MongoClient("mongodb+srv://dbuser:8fO56qa3wBdNYtsk@cluster0-bhgly.mongodb.net/rateBeer?retryWrites=true&w=majority")
 db = client.rateBeer
 #collection = db.breweries
         
@@ -38,7 +38,7 @@ review_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=BeerRevi
 abs_path = 'C:/Users/zh4448/Documents/RateBeerDocuments/Newversion/'
 
 
-for abbr in constant.abbr[1:]:
+for abbr in  constant.abbr[4:5]:#reversed(constant.abbr[:-29]):
     filename = abs_path + 'beers/rateBeer_beers_' + abbr + '.csv'
     
     gt_reviews = []
@@ -56,14 +56,17 @@ for abbr in constant.abbr[1:]:
 #        brewery_dic['Closed'] = brewery_dic['Closed'].apply(lambda x: x if pd.isnull(x) else str(int(x)))
         
 #                brewery_dic.update({key:brewery[key] for key in ['State','Est.','Closed']})
-        try:
-            beer_id = beer['BeerId']
-            
-            next_url = beerStat_query.format(beer_id)
-            beer_content = json.loads(get_general_html(next_url))
-        except:
-            print(beer['BeerName'] + ' no review data')
-            continue
+#        try:
+        beer_id = beer['BeerId']
+        
+        next_url = beerStat_query.format(beer_id)
+        for i in range(0, 4):
+            beer_content = get_general_html(next_url, returnJson=True) #json.loads(get_general_html(next_url))
+            if 'errors' not in beer_content and beer_content != " Request Failure ": break  #and beer_content['data']['beer']['brewer']
+            else: time.sleep(5)
+#        except:
+#            print(beer['BeerName'] + ' no review data')
+#            continue
         '''Beer statistics'''
         beer_stat = beer_content['data']['beer']
         if not beer_stat: continue
@@ -87,14 +90,17 @@ for abbr in constant.abbr[1:]:
         hasReview = True
         try:
             next_url = review_query.format(beer_id,'')
-            review_content = get_general_html(next_url, returnJson=True)
+            for i in range(0, 4):
+                review_content = get_general_html(next_url, returnJson=True)
+                if review_content != " Request Failure ": break
+                time.sleep(3)
+#            review_content = get_general_html(next_url, returnJson=True)
         except Exception as e:
-            print(index)
-            print(str(e))
-            print(review_content)
+            logging.info(index)
+            logging.info(str(e))
+            logging.warning(review_content)
         review_list = []
         while hasReview:
-            
             review_table = review_content['data']['beerList']['items']
             review_list.extend(review_table.copy())
             for review_item in review_table:
@@ -109,8 +115,11 @@ for abbr in constant.abbr[1:]:
                 review_dic['updatedAt'] = review_item['updatedAt']
                 gt_reviews.append(review_dic.copy())          
             if review_content['data']['beerList']['last']:
-                next_url = review_query.format(beer_id,'%2C%22after%22%3A%22{}%22'.format(review_content['data']['beerList']['last']))
-                review_content = get_general_html(next_url, returnJson=True)
+                next_url = review_query.format(beer_id,'%2C%22after%22%3A%22{}%22'.format(review_content['data']['beerList']['last']))      
+                for i in range(0, 4):
+                    review_content = get_general_html(next_url, returnJson=True)
+                    if review_content != " Request Failure ": break
+                    time.sleep(3)
             else: hasReview = False
 #        
         review_condition = {"beer.id": str(beer_id)}

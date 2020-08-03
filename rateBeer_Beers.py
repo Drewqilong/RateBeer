@@ -46,7 +46,7 @@ brewery_query = 'https://beta.ratebeer.com/v1/api/graphql/?operationName=GetBrew
 abs_path = 'C:/Users/zh4448/Documents/RateBeerDocuments/Newversion/'
 
 
-for abbr in constant.abbr[4:]:
+for abbr in constant.abbr[41:]:
     filename = abs_path + 'breweries/rateBeer_breweries_' + abbr + '.csv'
     
     gt_brewers = []
@@ -97,14 +97,13 @@ for abbr in constant.abbr[4:]:
         '''Beer list'''
         hasBeer = True
         next_url = beer_query.format(brewery_id,'')
-        beer_content = get_general_html(next_url, returnJson = True)
+        for i in range(4):
+            beer_content = get_general_html(next_url, returnJson = True)
+            if beer_content !=  " Request Failure ": break
+            time.sleep(3)
         beer_list = []
         while hasBeer:
-            try:
-                beers_table = beer_content['data']['brewerBeers']['items']
-            except:
-                logging.info(beer_content)
-                break
+            beers_table = beer_content['data']['brewerBeers']['items']
             
             beer_list.extend(beers_table.copy())
             for beer_item in beers_table:
@@ -125,7 +124,12 @@ for abbr in constant.abbr[4:]:
             if beer_content['data']['brewerBeers']['last']:
                 try:
                     next_url = beer_query.format(brewery_id,'%2C%22after%22%3A%22{}%22'.format(beer_content['data']['brewerBeers']['last']))
-                    beer_content = get_general_html(next_url, returnJson = True)
+                    
+                    for i in range(4):
+                        beer_content = get_general_html(next_url, returnJson = True)
+                        if beer_content !=  " Request Failure ": break
+                        time.sleep(3)
+#                    beer_content = get_general_html(next_url, returnJson = True)
                 except:
                     logging.info(beer_content)
             else: hasBeer = False
