@@ -122,8 +122,9 @@ for abbr in  constant.abbr[4:5]:#reversed(constant.abbr[:-29]):
                     time.sleep(3)
             else: hasReview = False
 #        
-        review_condition = {"beer.id": str(beer_id)}
-        update_mongodb('beerReview', {'beer':beer_stat,'reviews': review_list}, review_condition)
+
+        # review_condition = {"beer.id": str(beer_id)}
+        # update_mongodb('beerReview', {'beer':beer_stat,'reviews': review_list}, review_condition)
     path = abs_path + 'beers_reviews'
     filename = 'rateBeer_beers_reviews_'+abbr+'.csv'
     exportCSV(gt_reviews,filename,path)
