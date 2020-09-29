@@ -33,7 +33,7 @@ partial_match_vector = np.vectorize(partial_match)
 filename = abs_path + 'Merged_091920_gh.xlsx'
 df_ba = pd.read_excel(filename)
 df_ba['NCompany'] = df_ba['Company'].str.replace("Company","").str.replace(" Co.","").str.replace(" Co","")
-
+df_ba['State'] = df_ba['State Province']
     
 filename = abs_path + 'rateBeer/breweries_info/rateBeer_breweries_info_all.csv'
 
@@ -49,22 +49,29 @@ df_rateBeer = df_rateBeer.add_prefix('RB_')
 
 
 
+'''Get duplicate rows'''
+df_duplicate = df_rateBeer.sort_values(by=['RB_Company', 'RB_State', 'RB_City'])
+df_duplicate = df_duplicate[df_duplicate.duplicated(subset=['RB_Company', 'RB_State', 'RB_City'])]
+
+
 ''' Combine two dataframe by permutation'''
 # df_ba_bystate['key'] = 1
 # df_brewery['key'] = 1
-combined_df = df_ba.merge(df_rateBeer, left_on=["BA_State Province","BA_City"], right_on=['RB_State', 'RB_City'], how="left")
+combined_df = df_rateBeer.merge(df_ba, left_on=['RB_State', 'RB_City'], right_on=["BA_State","BA_City"], how="left")
 # combined_df = combined_df[combined_df["NCompany_y"].notna()].reset_index()
 combined_df = combined_df.where(pd.notnull(combined_df), None)
 
-combined_df['score']=partial_match_vector(combined_df['BA_Company'],combined_df['RB_NCompany'])
+combined_df['score']=partial_match_vector(combined_df['RB_NCompany'],combined_df['BA_NCompany'])
 
 # indx = combined_df.groupby(['Company_x'])['score'].transform(max) == combined_df['score']
-indx = combined_df.groupby(['BA_Company', 'BA_State Province', 'BA_City'], sort=False)['score'].idxmax()
+indx = combined_df.groupby(['RB_Company', 'RB_State', 'RB_City'], sort=False)['score'].idxmax()
 combined_df = combined_df.loc[indx]
 # combined_df = combined_df[combined_df.score>=80]
 
 path = abs_path+'Merge/'
-filename = 'merge_BA_rateBeer_all.csv'
+filename = 'merge_rateBeer_BA_all.csv'
 exportCSV(combined_df,filename,path)
-
         
+path = abs_path+'Merge'
+filename = 'duplicate_rateBeer.csv'
+exportCSV(df_duplicate,filename,path)
